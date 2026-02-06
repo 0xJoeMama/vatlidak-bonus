@@ -23,7 +23,7 @@ static uint64_t get_current_time() {
   return tp.tv_nsec + tp.tv_sec * 1000000000;
 }
 
-PerfInstance perf_start(PerfData *data) {
+PerfInstance perf_istart(PerfData *data) {
   return (PerfInstance){
       .data = data,
       .start = get_current_time(),
@@ -40,4 +40,6 @@ void perf_iend(PerfInstance *instance) {
 }
 
 void perf_end(PerfData *data) {
+  (void)data;
+  atomic_thread_fence(memory_order_release);
 }

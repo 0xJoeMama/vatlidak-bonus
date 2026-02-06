@@ -1,9 +1,11 @@
-CFLAGS=-Wall -Wextra -Werror -std=c11
-BINS=unbased
+CFLAGS=-Wall -Wextra -Werror
+BINS=unbased client
 
 all: $(BINS) loong.db
 
-unbased: tp.o
+unbased: tp.o perf.o config.h
+
+client: config.h
 
 loong.db: create_db
 	./create_db

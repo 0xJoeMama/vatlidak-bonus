@@ -7,7 +7,6 @@
 typedef struct {
   atomic_uint_fast64_t total_time;
   atomic_uint_fast64_t num_entries;
-  mtx_t lock;
   const char *name;
 } PerfData;
 

@@ -6,11 +6,14 @@
 #include <unistd.h>
 
 #include "db.h"
+#include "perf.h"
 #include "tp.h"
+#include "config.h"
 
 typedef struct {
   int connfd;
   const DbEntry *db;
+  PerfInstance response_time;
 } ClientReq;
 
 void handle_client_request(void *data) {
@@ -54,6 +57,8 @@ out:
     perror("failed to shutdown");
   if (close(req.connfd) < 0)
     perror("failed to close");
+
+  perf_iend(&req.response_time);
 }
 
 DbEntry *map_database_file(const char *file) {
@@ -103,11 +108,15 @@ int main(void) {
 
   ThreadPool tp;
   tp_init(&tp, 12);
+  PerfData perf;
 
-  while (1) {
+  perf_init(&perf, "Response time\n");
+
+  for (int i = 0; i < ITER; i++) {
     printf("Awaiting connection\n");
     int connfd = accept(sockfd, NULL, 0);
 
+    PerfInstance instance = perf_istart(&perf);
     printf("Accepted connection\n");
 
     if (connfd < 0) {
@@ -124,6 +133,7 @@ int main(void) {
 
     req->connfd = connfd;
     req->db = db;
+    req->response_time = instance;
 
     // we have out connection. Dispatch handling of the request to a different
     // thread
@@ -134,7 +144,11 @@ int main(void) {
   }
 
   tp_join(&tp);
+  shutdown(sockfd, SHUT_RDWR);
   close(sockfd);
+
+  perf_end(&perf);
+  printf("Average client handling time was: %lu (ns)\n", perf.total_time / perf.num_entries);
 
   return 0;
 }
