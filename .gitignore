@@ -2,4 +2,6 @@ based
 unbased
 create_db
 *.db
+.cache/
+compile_commands.json
 *.o
