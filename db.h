@@ -5,7 +5,7 @@ typedef struct {
   char name[32];
 } DbEntry;
 
-#define DB_SIZE (1UL << 16)
+#define DB_SIZE (1UL << 26)
 
 #define DB_H
 #endif

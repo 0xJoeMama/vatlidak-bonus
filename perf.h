@@ -6,7 +6,9 @@
 
 typedef struct {
   atomic_uint_fast64_t total_time;
-  atomic_uint_fast64_t num_entries;
+  atomic_uint_fast64_t num_clients;
+  uint64_t start_time;
+  uint64_t end_time;
   const char *name;
 } PerfData;
 

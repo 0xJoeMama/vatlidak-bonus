@@ -1,14 +1,15 @@
 #include <arpa/inet.h>
+#include <assert.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include "config.h"
 #include "db.h"
 #include "perf.h"
 #include "tp.h"
-#include "config.h"
 
 typedef struct {
   int connfd;
@@ -70,6 +71,8 @@ DbEntry *map_database_file(const char *file) {
       mmap(NULL, DB_SIZE * sizeof(DbEntry), PROT_READ, MAP_SHARED, fd, 0);
   close(fd);
 
+  madvise(db, DB_SIZE * sizeof(DbEntry), MADV_NOHUGEPAGE | MADV_RANDOM);
+
   return db;
 }
 
@@ -83,6 +86,20 @@ int main(void) {
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0) {
     perror("failed to open socket");
+    return 1;
+  }
+
+  if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) <
+      0) {
+    perror("setsockopt(SO_REUSEADDR) failed");
+    close(sockfd);
+    return 1;
+  }
+
+  if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &(int){1}, sizeof(int)) <
+      0) {
+    perror("setsockopt(SO_REUSEADDR) failed");
+    close(sockfd);
     return 1;
   }
 
@@ -100,7 +117,7 @@ int main(void) {
 
   printf("Listening on port 2026\n");
 
-  if (listen(sockfd, 12) < 0) {
+  if (listen(sockfd, 500) < 0) {
     perror("listen failed");
     close(sockfd);
     return 1;
@@ -112,7 +129,7 @@ int main(void) {
 
   perf_init(&perf, "Response time\n");
 
-  for (int i = 0; i < ITER; i++) {
+  for (unsigned long i = 0; i < ITER; i++) {
     printf("Awaiting connection\n");
     int connfd = accept(sockfd, NULL, 0);
 
@@ -148,7 +165,12 @@ int main(void) {
   close(sockfd);
 
   perf_end(&perf);
-  printf("Average client handling time was: %lu (ns)\n", perf.total_time / perf.num_entries);
+  fflush(stdout);
+  assert(perf.num_clients == ITER);
+  printf("Average response time was %lu (ns)\n",
+         perf.total_time / perf.num_clients);
+  printf("Average throughput was %.02lf clients/s\n",
+         perf.num_clients * 1E9 / (perf.end_time - perf.start_time));
 
   return 0;
 }

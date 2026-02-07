@@ -1,6 +1,7 @@
 based
 unbased
 create_db
+client
 *.db
 .cache/
 compile_commands.json
