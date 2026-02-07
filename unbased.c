@@ -124,7 +124,8 @@ int main(void) {
   }
 
   ThreadPool tp;
-  tp_init(&tp, 12);
+  // have all threads accept connections
+  tp_init(&tp, 60);
   PerfData perf;
 
   perf_init(&perf, "Response time\n");
