@@ -100,7 +100,7 @@ void handle_client_request(void *data) {
     req->addr = addr;
     // otherwise offload the request to an IO worker
     tp_push_task(iop, access_post_response, req);
-    atomic_fetch_add(&offloads, 1);
+    atomic_fetch_add_explicit(&offloads, 1, memory_order_relaxed);
   }
 
   return;
