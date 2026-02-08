@@ -190,12 +190,10 @@ int main(void) {
   }
 
   ThreadPool resp;
-  tp_init(&resp, 12);
+  tp_init(&resp, 20);
 
   ThreadPool iop;
-  // we can overcommit here as most of the time these boys will be waiting for
-  // IO
-  tp_init(&iop, 48);
+  tp_init(&iop, 4);
 
   PerfData perf;
 
