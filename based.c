@@ -139,8 +139,18 @@ void pretouch_db_area(unsigned long *ept, DbEntry *db) {
   unsigned long *first_page = ept + ((unsigned long) db >> 12);
   unsigned long db_pages = (DB_SIZE * sizeof(DbEntry)) >> 12;
 
+  printf("Touching %lu pages before starting run\n", db_pages);
+  PerfData data;
+  perf_init(&data, "Pretouch");
+  PerfInstance ins = perf_istart(&data);
+
   for (unsigned long *p = first_page; p < first_page + db_pages; p++)
      assert(*p == 0);
+
+  perf_iend(&ins);
+  perf_end(&data);
+
+  printf("Pretouching took %lu (ns)\n", data.end_time - data.start_time);
 }
 
 int main(void) {
@@ -202,10 +212,10 @@ int main(void) {
   }
 
   ThreadPool resp;
-  tp_init(&resp, 20);
+  tp_init(&resp, 24);
 
   ThreadPool iop;
-  tp_init(&iop, 4);
+  tp_init(&iop, 12);
 
   PerfData perf;
 
