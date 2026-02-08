@@ -1,4 +1,5 @@
 #include <arpa/inet.h>
+#include <assert.h>
 #include <fcntl.h>
 #include <stdatomic.h>
 #include <stdio.h>
@@ -134,6 +135,14 @@ unsigned long *map_ept() {
   return ept;
 }
 
+void pretouch_db_area(unsigned long *ept, DbEntry *db) {
+  unsigned long *first_page = ept + ((unsigned long) db >> 12);
+  unsigned long db_pages = (DB_SIZE * sizeof(DbEntry)) >> 12;
+
+  for (unsigned long *p = first_page; p < first_page + db_pages; p++)
+     assert(*p == 0);
+}
+
 int main(void) {
   unsigned long *ept = map_ept();
   if (!ept) {
@@ -146,6 +155,9 @@ int main(void) {
     perror("failed to map database file");
     return 1;
   }
+
+  // touch the whole db area to avoid page faults by users on first touch
+  pretouch_db_area(ept, db);
 
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0) {
